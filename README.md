@@ -1,4 +1,4 @@
-!(Global_hits)[https://github.com/sahilkumardhala/Global-Hits/blob/main/Global_hits.png]
+![Global_hits](https://github.com/sahilkumardhala/Global-Hits/blob/main/Global_hits.png)
 # Global-Hits
 
 Global-Hits is a lightweight single-page web app that showcases the most-viewed/viral songs from different languages and lets you play them using the YouTube IFrame Player API. It’s built with vanilla HTML, CSS, and JavaScript and is designed to be simple to run and customize.
