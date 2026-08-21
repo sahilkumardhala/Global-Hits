@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Global Viral Hits</title>
+  <style>
+    :root {
+      --bg-color: #0b1120;
+      --panel-bg: rgba(30, 41, 59, 0.85);
+      --accent-color: #38bdf8;
+      --accent-hover: #0284c7;
+      --text-main: #f8fafc;
+      --text-sub: #94a3b8;
+      --border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 1.5rem 1rem;
+      position: relative;
+    }
+
+    .player-container {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 560px;
+      background: var(--panel-bg);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--border-color);
+      border-radius: 1.25rem;
+      padding: 1.5rem;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+      display: flex;
+      flex-direction: column;
+      gap: 1.2rem;
+    }
+
+    .hidden-iframe {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .player-header {
+      text-align: center;
+    }
+
+    .brand-title {
+      font-size: 1.5rem;
+      font-weight: 800;
+      letter-spacing: -0.025em;
+      background: linear-gradient(135deg, #ffffff 40%, var(--accent-color));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .brand-subtitle {
+      font-size: 0.8rem;
+      color: var(--text-sub);
+      margin-top: 0.2rem;
+    }
+
+    .now-playing-card {
+      text-align: center;
+      background: rgba(15, 23, 42, 0.7);
+      padding: 1rem;
+      border-radius: 0.75rem;
+      border: 1px solid var(--border-color);
+    }
+
+    .now-playing-badge {
+      font-size: 0.65rem;
+      font-weight: 700;
+      color: var(--accent-color);
+      letter-spacing: 0.1em;
+      margin-bottom: 0.25rem;
+    }
+
+    .current-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--text-main);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .current-meta {
+      font-size: 0.825rem;
+      color: var(--text-sub);
+      margin-top: 0.25rem;
+    }
+
+    .scrubber-section {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    .time-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      color: var(--text-sub);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .slider {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 6px;
+      border-radius: 3px;
+      background: #334155;
+      outline: none;
+      cursor: pointer;
+    }
+
+    .slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--accent-color);
+      cursor: pointer;
+      box-shadow: 0 0 8px var(--accent-color);
+    }
+
+    .slider::-moz-range-thumb {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--accent-color);
+      border: none;
+      cursor: pointer;
+    }
+
+    .controls-row {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 1.25rem;
+    }
+
+    .control-btn {
+      border: none;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+    }
+
+    .control-btn.secondary {
+      width: 44px;
+      height: 44px;
+      background: #334155;
+      color: var(--text-main);
+      font-size: 1.1rem;
+    }
+
+    .control-btn.secondary:hover {
+      background: #475569;
+    }
+
+    .control-btn.primary {
+      width: 56px;
+      height: 56px;
+      background: var(--accent-color);
+      color: #0f172a;
+      font-size: 1.35rem;
+      box-shadow: 0 0 15px rgba(56, 189, 248, 0.4);
+    }
+
+    .control-btn.primary:hover {
+      background: var(--accent-hover);
+      transform: scale(1.05);
+    }
+
+    .volume-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.75rem;
+    }
+
+    .mute-btn {
+      background: none;
+      border: none;
+      font-size: 1.1rem;
+      cursor: pointer;
+    }
+
+    .volume-slider {
+      max-width: 130px;
+    }
+
+    .volume-val {
+      font-size: 0.75rem;
+      color: var(--text-sub);
+      width: 35px;
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 0.65rem 0.85rem;
+      background: rgba(15, 23, 42, 0.8);
+      border: 1px solid var(--border-color);
+      border-radius: 0.5rem;
+      color: var(--text-main);
+      font-size: 0.85rem;
+      outline: none;
+      margin-bottom: 0.5rem;
+    }
+
+    .search-input:focus {
+      border-color: var(--accent-color);
+    }
+
+    .tracklist-container {
+      max-height: 220px;
+      overflow-y: auto;
+      border-radius: 0.5rem;
+      border: 1px solid var(--border-color);
+      background: rgba(15, 23, 42, 0.5);
+    }
+
+    .tracklist {
+      list-style: none;
+    }
+
+    .track-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.65rem 0.85rem;
+      border-bottom: 1px solid var(--border-color);
+      cursor: pointer;
+      transition: background-color 0.15s;
+    }
+
+    .track-item:last-child {
+      border-bottom: none;
+    }
+
+    .track-item:hover {
+      background-color: rgba(51, 65, 85, 0.6);
+    }
+
+    .track-item.active {
+      background-color: rgba(51, 65, 85, 0.9);
+      border-left: 3px solid var(--accent-color);
+    }
+
+    .track-info .title {
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+
+    .track-info .lang {
+      font-size: 0.75rem;
+      color: var(--text-sub);
+    }
+
+    .track-views {
+      font-size: 0.75rem;
+      color: var(--accent-color);
+      font-weight: 500;
+    }
+  </style>
+</head>
+<body>
+
+  <main class="player-container">
+    <!-- Hidden element for YouTube Player API -->
+    <div id="youtube-player" class="hidden-iframe"></div>
+
+    <header class="player-header">
+      <h1 class="brand-title">Global Hits</h1>
+      <p class="brand-subtitle">Most Viewed Song in Every Language</p>
+    </header>
+
+    <!-- Now Playing Card -->
+    <section class="now-playing-card">
+      <div class="now-playing-badge">NOW PLAYING</div>
+      <h2 id="current-title" class="current-title">Select a track to start</h2>
+      <p id="current-meta" class="current-meta">Language: — • Views: —</p>
+    </section>
+
+    <!-- Progress Scrubber -->
+    <section class="scrubber-section">
+      <input type="range" id="seek-bar" class="slider" min="0" max="100" value="0" step="0.1" aria-label="Seek track" />
+      <div class="time-row">
+        <span id="current-time">0:00</span>
+        <span id="duration-time">0:00</span>
+      </div>
+    </section>
+
+    <!-- Playback Controls -->
+    <section class="controls-row">
+      <button id="prev-btn" class="control-btn secondary" title="Previous Track">⏮</button>
+      <button id="play-pause-btn" class="control-btn primary" title="Play / Pause">▶</button>
+      <button id="next-btn" class="control-btn secondary" title="Next Track">⏭</button>
+    </section>
+
+    <!-- Volume Control -->
+    <section class="volume-row">
+      <button id="mute-btn" class="mute-btn" title="Mute / Unmute">🔊</button>
+      <input type="range" id="volume-bar" class="slider volume-slider" min="0" max="100" value="100" aria-label="Volume" />
+      <span id="volume-val" class="volume-val">100%</span>
+    </section>
+
+    <!-- Search & Playlist -->
+    <section class="playlist-section">
+      <input type="text" id="search-input" class="search-input" placeholder="Search song or language..." />
+      <div class="tracklist-container">
+        <ul id="tracklist" class="tracklist"></ul>
+      </div>
+    </section>
+  </main>
+
+  <!-- YouTube IFrame API -->
+  <script src="https://www.youtube.com/iframe_api"></script>
+
+  <!-- Embedded Application Logic -->
+  <script>
+    const songData = [
+      { "language": "Chhattisgarhi", "song_name": "Maya Hoge Maya", "total_views": "57 Million", "video_id": "eSfFKUjjv2Y" },
+      { "language": "Doteli", "song_name": "Haai Haai Maya (Bambai Gaijane)", "total_views": "71 Million", "video_id": "_mvve98Kb5Q" },
+      { "language": "Garhwali", "song_name": "Dhana", "total_views": "82 Million", "video_id": "0hS7ti5PS5A" },
+      { "language": "Rajasthani", "song_name": "Chaudhary", "total_views": "138 Million", "video_id": "1gukvtH_a3I" },
+      { "language": "Polish", "song_name": "Ona by tak chciała", "total_views": "235 Million", "video_id": "IP5jj0oNAWg" },
+      { "language": "Nepali", "song_name": "Kutu Ma Kutu", "total_views": "240 Million", "video_id": "VwIWfvW3SD8" },
+      { "language": "Sinhala", "song_name": "Manike Mage Hithe", "total_views": "258 Million", "video_id": "PgCliOxl41o" },
+      { "language": "Persian", "song_name": "Behet Ghol Midam", "total_views": "284 Million", "video_id": "cDNDVtoJhik" },
+      { "language": "Kannada", "song_name": "Karabu", "total_views": "334 Million", "video_id": "LI8sVqjUSpE" },
+      { "language": "Sanskrit", "song_name": "Shiva Tandava Stotram", "total_views": "410 Million", "video_id": "w65nwf3GJ0c" },
+      { "language": "Bengali", "song_name": "Oporadhi", "total_views": "453 Million", "video_id": "PQDbJ-p0ivE" },
+      { "language": "Telugu", "song_name": "Butta Bomma", "total_views": "944 Million", "video_id": "2mDCVzruYzQ" },
+      { "language": "Bhojpuri", "song_name": "Hello Koun", "total_views": "1.0 Billion", "video_id": "u43g_6a9780" },
+      { "language": "Russian", "song_name": "I Got Love", "total_views": "1.1 Billion", "video_id": "nidQCt_8Pzk" },
+      { "language": "German", "song_name": "Wind of Change", "total_views": "1.2 Billion", "video_id": "n4RjJKxkeG4" },
+      { "language": "Arabic", "song_name": "Lm3allem", "total_views": "1.2 Billion", "video_id": "_Fwf45pIAtM" },
+      { "language": "Nigerian Pidgin", "song_name": "Calm Down", "total_views": "1.4 Billion", "video_id": "WcIcVapfqXw" },
+      { "language": "French", "song_name": "Dernière Danse", "total_views": "1.4 Billion", "video_id": "K5KAc5CoCuk" },
+      { "language": "Hindi", "song_name": "Vaaste", "total_views": "1.7 Billion", "video_id": "BBAyRBTfsOU" },
+      { "language": "Tamil", "song_name": "Rowdy Baby", "total_views": "1.7 Billion", "video_id": "x6Q7c9RyMzk" },
+      { "language": "Punjabi", "song_name": "Lehanga", "total_views": "1.8 Billion", "video_id": "IEDEtZ4UVtE" },
+      { "language": "Portuguese", "song_name": "Bum Bum Tam Tam", "total_views": "1.9 Billion", "video_id": "_P7S2lKif-A" },
+      { "language": "Korean", "song_name": "Gangnam Style", "total_views": "5.9 Billion", "video_id": "9bZkp7q19f0" },
+      { "language": "English", "song_name": "See You Again", "total_views": "7.0 Billion", "video_id": "RgKAFK5djSk" },
+      { "language": "Spanish", "song_name": "Despacito", "total_views": "9.1 Billion", "video_id": "kJQP7kiw5Fk" }
+    ];
+
+    let player;
+    let currentTrackIndex = 0;
+    let isPlaying = false;
+    let isSeeking = false;
+    let progressTimer = null;
+    let lastVolume = 100;
+
+    window.onYouTubeIframeAPIReady = function () {
+      player = new YT.Player("youtube-player", {
+        height: "1",
+        width: "1",
+        videoId: songData[currentTrackIndex].video_id,
+        playerVars: {
+          playsinline: 1,
+          controls: 0,
+          disablekb: 1
+        },
+        events: {
+          onReady: onPlayerReady,
+          onStateChange: onPlayerStateChange
+        }
+      });
+    };
+
+    function onPlayerReady() {
+      player.setVolume(100);
+      updateUI();
+    }
+
+    function onPlayerStateChange(event) {
+      const playBtn = document.getElementById("play-pause-btn");
+      if (event.data === YT.PlayerState.PLAYING) {
+        isPlaying = true;
+        if (playBtn) playBtn.textContent = "⏸";
+        startProgressTracker();
+      } else if (event.data === YT.PlayerState.PAUSED) {
+        isPlaying = false;
+        if (playBtn) playBtn.textContent = "▶";
+        stopProgressTracker();
+      } else if (event.data === YT.PlayerState.ENDED) {
+        stopProgressTracker();
+        playNext();
+      }
+    }
+
+    function formatTime(seconds) {
+      if (!seconds || isNaN(seconds)) return "0:00";
+      const min = Math.floor(seconds / 60);
+      const sec = Math.floor(seconds % 60);
+      return `${min}:${sec < 10 ? "0" : ""}${sec}`;
+    }
+
+    function startProgressTracker() {
+      stopProgressTracker();
+      progressTimer = setInterval(() => {
+        if (!player || !player.getDuration || isSeeking) return;
+        const current = player.getCurrentTime() || 0;
+        const duration = player.getDuration() || 0;
+
+        document.getElementById("current-time").textContent = formatTime(current);
+        document.getElementById("duration-time").textContent = formatTime(duration);
+
+        if (duration > 0) {
+          document.getElementById("seek-bar").value = (current / duration) * 100;
+        }
+      }, 500);
+    }
+
+    function stopProgressTracker() {
+      if (progressTimer) clearInterval(progressTimer);
+    }
+
+    function loadTrack(index, autoplay = true) {
+      if (index < 0 || index >= songData.length) return;
+      currentTrackIndex = index;
+      const track = songData[currentTrackIndex];
+
+      document.getElementById("seek-bar").value = 0;
+      document.getElementById("current-time").textContent = "0:00";
+      document.getElementById("duration-time").textContent = "0:00";
+
+      if (player && player.loadVideoById) {
+        if (autoplay) {
+          player.loadVideoById(track.video_id);
+          isPlaying = true;
+          document.getElementById("play-pause-btn").textContent = "⏸";
+        } else {
+          player.cueVideoById(track.video_id);
+          isPlaying = false;
+          document.getElementById("play-pause-btn").textContent = "▶";
+        }
+      }
+      updateUI();
+    }
+
+    function togglePlayPause() {
+      if (!player) return;
+      if (isPlaying) {
+        player.pauseVideo();
+      } else {
+        player.playVideo();
+      }
+    }
+
+    function playNext() {
+      const nextIndex = (currentTrackIndex + 1) % songData.length;
+      loadTrack(nextIndex, true);
+    }
+
+    function playPrev() {
+      const prevIndex = (currentTrackIndex - 1 + songData.length) % songData.length;
+      loadTrack(prevIndex, true);
+    }
+
+    function updateUI() {
+      const track = songData[currentTrackIndex];
+      document.getElementById("current-title").textContent = track.song_name;
+      document.getElementById("current-meta").textContent = `Language: ${track.language} • Views: ${track.total_views}`;
+
+      const items = document.querySelectorAll(".track-item");
+      items.forEach((item) => {
+        const idx = parseInt(item.dataset.index, 10);
+        item.classList.toggle("active", idx === currentTrackIndex);
+      });
+    }
+
+    function renderPlaylist(filterText = "") {
+      const tracklistEl = document.getElementById("tracklist");
+      tracklistEl.innerHTML = "";
+
+      songData.forEach((track, index) => {
+        const match =
+          track.song_name.toLowerCase().includes(filterText.toLowerCase()) ||
+          track.language.toLowerCase().includes(filterText.toLowerCase());
+
+        if (!match) return;
+
+        const li = document.createElement("li");
+        li.className = `track-item ${index === currentTrackIndex ? "active" : ""}`;
+        li.dataset.index = index;
+        li.innerHTML = `
+          <div class="track-info">
+            <div class="title">${track.song_name}</div>
+            <div class="lang">${track.language}</div>
+          </div>
+          <div class="track-views">${track.total_views}</div>
+        `;
+        li.addEventListener("click", () => loadTrack(index, true));
+        tracklistEl.appendChild(li);
+      });
+    }
+
+    // Scrubber listeners
+    const seekBar = document.getElementById("seek-bar");
+    seekBar.addEventListener("input", () => {
+      isSeeking = true;
+      if (player && player.getDuration) {
+        const duration = player.getDuration();
+        const targetTime = (seekBar.value / 100) * duration;
+        document.getElementById("current-time").textContent = formatTime(targetTime);
+      }
+    });
+
+    seekBar.addEventListener("change", () => {
+      if (player && player.getDuration) {
+        const duration = player.getDuration();
+        const seekToTime = (seekBar.value / 100) * duration;
+        player.seekTo(seekToTime, true);
+      }
+      isSeeking = false;
+    });
+
+    // Volume listeners
+    const volumeBar = document.getElementById("volume-bar");
+    const volumeVal = document.getElementById("volume-val");
+    const muteBtn = document.getElementById("mute-btn");
+
+    function updateVolume(val) {
+      if (!player) return;
+      player.setVolume(val);
+      volumeBar.value = val;
+      volumeVal.textContent = `${val}%`;
+      muteBtn.textContent = val == 0 ? "🔇" : "🔊";
+    }
+
+    volumeBar.addEventListener("input", (e) => {
+      updateVolume(e.target.value);
+    });
+
+    muteBtn.addEventListener("click", () => {
+      if (!player) return;
+      if (player.isMuted() || volumeBar.value == 0) {
+        player.unMute();
+        updateVolume(lastVolume || 50);
+      } else {
+        lastVolume = volumeBar.value;
+        player.mute();
+        updateVolume(0);
+      }
+    });
+
+    // Controls & Search listeners
+    document.getElementById("play-pause-btn").addEventListener("click", togglePlayPause);
+    document.getElementById("next-btn").addEventListener("click", playNext);
+    document.getElementById("prev-btn").addEventListener("click", playPrev);
+    document.getElementById("search-input").addEventListener("input", (e) => {
+      renderPlaylist(e.target.value);
+    });
+
+    // Initial load
+    renderPlaylist();
+  </script>
+</body>
+</html>
+
